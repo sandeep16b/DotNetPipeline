@@ -1,0 +1,14 @@
+node
+{
+    stage 'Checkout code'
+        git branch: 'main', url: 'https://github.com/sandeep16b/BusinessApplication.git'
+    
+    stage 'Restore NuGet'
+        bat 'C:/ProgramData/chocolatey/bin/nuget.exe restore BusinessApplication.sln'
+    
+    stage 'Build'
+        bat "\"${tool 'MSBuildLocal'}\" BusinessApplication.sln /p:Configuration=Debug /p:Platform=\"Any CPU\" /p:ProductVersion=1.0.0.${env.BUILD_NUMBER}"
+    
+    stage 'Test'
+        bat 'dotnet test BusinessApplication.Tests/BusinessApplication.Tests.csproj --logger "trx;LogFileName=test-results.trx"'
+}
