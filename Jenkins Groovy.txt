@@ -16,14 +16,19 @@ node {
     }
 
     stage('Deploy to AWS EC2') {
-        def ec2IP = '54.159.31.155'
-        def ec2User = 'Administrator'
-        def ec2Password = '"Y6swd&nFIsgo!MMnTcTWLl-7.rzs7eQO"'  // wrapped in quotes
+    def ec2IP = '54.159.31.155'
+    def ec2User = 'Administrator'
+    def ec2Password = 'Y6swd&nFIsgo!MMnTcTWLl-7.rzs7eQO'
 
-        def cmd = 'net use \\\\' + ec2IP + '\\c$ ' + ec2Password + ' /user:' + ec2User + ' && ' +
-                  'xcopy /E /Y BusinessApplication\\bin\\Debug\\net8.0\\* \\\\' + ec2IP + '\\c$\\inetpub\\wwwroot\\2025BusinessApplication\\ && ' +
-                  'net use \\\\' + ec2IP + '\\c$ /delete'
+    def cmd = '''
+        net use \\\\54.159.31.155\\c$ /delete >nul 2>&1
+        net use \\\\54.159.31.155\\c$ "Y6swd&nFIsgo!MMnTcTWLl-7.rzs7eQO" /user:Administrator
+        sc \\\\54.159.31.155 stop w3svc
+        xcopy /E /Y BusinessApplication\\bin\\Debug\\net8.0\\* \\\\54.159.31.155\\c$\\inetpub\\wwwroot\\2025BusinessApplication\\
+        sc \\\\54.159.31.155 start w3svc
+        net use \\\\54.159.31.155\\c$ /delete
+    '''
 
-        bat cmd
+    bat cmd
     }
 }
