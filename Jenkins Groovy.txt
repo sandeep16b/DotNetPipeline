@@ -1,28 +1,29 @@
-node
-{
-    stage 'Checkout code'
+node {
+    stage('Checkout code') {
         git branch: 'main', url: 'https://github.com/sandeep16b/BusinessApplication.git'
-    
-    stage 'Restore NuGet'
+    }
+
+    stage('Restore NuGet') {
         bat 'C:/ProgramData/chocolatey/bin/nuget.exe restore BusinessApplication.sln'
-    
-    stage 'Build'
+    }
+
+    stage('Build') {
         bat "\"${tool 'MSBuildLocal'}\" BusinessApplication.sln /p:Configuration=Debug /p:Platform=\"Any CPU\" /p:ProductVersion=1.0.0.${env.BUILD_NUMBER}"
-    
-    stage 'Test'
+    }
+
+    stage('Test') {
         bat 'dotnet test BusinessApplication.Tests/BusinessApplication.Tests.csproj --logger "trx;LogFileName=test-results.trx"'
+    }
 
     stage('Deploy to AWS EC2') {
-        def ec2Ip = '54.159.31.155' // replace with your instance IP
-        def user = 'Administrator'
-        def password = 'yourDecryptedPassword' // replace with the actual RDP password
+        def ec2IP = '54.159.31.155'
+        def ec2User = 'Administrator'
+        def ec2Password = '"Y6swd&nFIsgo!MMnTcTWLl-7.rzs7eQO"'  // wrapped in quotes
 
-        bat """
-        powershell -Command "Invoke-Command -ComputerName ${ec2Ip} -ScriptBlock { Stop-WebAppPool -Name 'DefaultAppPool' } -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
-        
-        powershell -Command "Copy-Item -Recurse -Path 'BusinessApplication\\bin\\Debug\\net8.0\\*' -Destination '\\\\${ec2Ip}\\c$\\inetpub\\wwwroot\\BusinessApplication' -Force -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
-        
-        powershell -Command "Invoke-Command -ComputerName ${ec2Ip} -ScriptBlock { Start-WebAppPool -Name 'DefaultAppPool' } -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
-        """
+        def cmd = 'net use \\\\' + ec2IP + '\\c$ ' + ec2Password + ' /user:' + ec2User + ' && ' +
+                  'xcopy /E /Y BusinessApplication\\bin\\Debug\\net8.0\\* \\\\' + ec2IP + '\\c$\\inetpub\\wwwroot\\2025BusinessApplication\\ && ' +
+                  'net use \\\\' + ec2IP + '\\c$ /delete'
+
+        bat cmd
     }
 }
