@@ -11,4 +11,18 @@ node
     
     stage 'Test'
         bat 'dotnet test BusinessApplication.Tests/BusinessApplication.Tests.csproj --logger "trx;LogFileName=test-results.trx"'
+
+    stage('Deploy to AWS EC2') {
+        def ec2Ip = '54.159.31.155' // replace with your instance IP
+        def user = 'Administrator'
+        def password = 'yourDecryptedPassword' // replace with the actual RDP password
+
+        bat """
+        powershell -Command "Invoke-Command -ComputerName ${ec2Ip} -ScriptBlock { Stop-WebAppPool -Name 'DefaultAppPool' } -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
+        
+        powershell -Command "Copy-Item -Recurse -Path 'BusinessApplication\\bin\\Debug\\net8.0\\*' -Destination '\\\\${ec2Ip}\\c$\\inetpub\\wwwroot\\BusinessApplication' -Force -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
+        
+        powershell -Command "Invoke-Command -ComputerName ${ec2Ip} -ScriptBlock { Start-WebAppPool -Name 'DefaultAppPool' } -Credential (New-Object System.Management.Automation.PSCredential('${user}', (ConvertTo-SecureString '${password}' -AsPlainText -Force)))"
+        """
+    }
 }
